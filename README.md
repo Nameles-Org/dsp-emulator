@@ -28,7 +28,7 @@ The docker images will be pulled automatically from docker hub.
   ```bash
   wget https://github.com/zeromq/zmqpp/archive/4.1.2.tar.gz
   tar zxvf 4.1.2.tar.gz && cd zmqpp-4.1.2
-  make && sudo make install
+  make && sudo make install && ldconfig
   cd ..
 ```
 
@@ -45,7 +45,7 @@ The latency test extracts the information from a postgreSQL database you can bui
 The program accepts the following command line parameters:
 
   - -MPS (Queries per second) type: int32 default: 30000
-  - -day (Day of the database to use for the hash tables in format YYMMDD))
+  - -day (Day of the database to use for the test queries in format YYMMDD))
    type: string default: "161201"
   - -dbIP (IP address of the database, data processing module) type: string
    default: "127.0.0.1"

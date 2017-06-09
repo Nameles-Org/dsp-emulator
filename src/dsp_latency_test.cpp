@@ -37,7 +37,7 @@ using std::string;
 #define ONEEXPNINE 1000000000 //1e9
 
 // TO-DO: define arguments for test running time and throughtput
-DEFINE_string(day, "161201", "Day of the database to use for the hash tables (in format YYMMDD)");
+DEFINE_string(day, "161201", "Day of the database to use for the test queries (in format YYMMDD)");
 DEFINE_string(dspIP, "*", "IP address of the DSP");
 DEFINE_string(dbIP, "127.0.0.1", "IP address of the database (data processing module)");
 DEFINE_string(dbPWD, "password", "password of the database");
