@@ -21,7 +21,7 @@ The docker images will be pulled automatically from docker hub.
 
 1. Install the dependencies:
   ```bash
-  sudo apt-get install make g++ libgflags-dev libboost-thread-dev libpqxx-dev
+  sudo apt-get install make g++ libgflags-dev libboost-thread-dev libpqxx-dev libzmq3-dev
   ```
 
 2. In debian zmqpp is not available in the repositories. Install it from github:
