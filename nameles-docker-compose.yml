@@ -1,0 +1,34 @@
+version: "3"
+services:
+  dsp-latency-test:
+    image: apastor/nameles-dsp-emulator
+    networks:
+      - default
+    restart: "no"
+    environment:
+      - SND_PORT=58501
+      - RCV_PORT=58505
+      - DB_IP=<database_host>
+      - DB_USER=<username>
+      - DB_PWD=<password>
+      - DB_NAME=nameles
+      - DB_DAY=161201
+      - MPS=30000
+      - TEST_TIME=60
+  scoring-module:
+    image: apastor/nameles-scoring-module
+    networks:
+      - default
+    restart: "no"
+    environment:
+      - DSP_IP=dsp-latency-test
+      - SND_PORT=58505
+      - RCV_PORT=58501
+      - FWD_PORT=58510
+      - DB_IP=<database_host>
+      - DB_USER=<username>
+      - DB_PWD=<password>
+      - DB_NAME=nameles
+      - DB_DAY=161201
+      - WORKERS=4
+      - MIN_TOTAL=250
