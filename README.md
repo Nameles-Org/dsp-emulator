@@ -44,7 +44,7 @@ The latency test extracts the information from a postgreSQL database you can bui
 
 The program accepts the following command line parameters:
 
-  - -MPS (Queries per second) type: int32 default: 30000
+  - -MPS (Queries per second) type: int default: 30000
   - -day (Day of the database to use for the test queries in format YYMMDD))
    type: string default: "161201"
   - -dbIP (IP address of the database, data processing module) type: string
@@ -53,9 +53,9 @@ The program accepts the following command line parameters:
   - -dbPWD (password of the database) type: string default: "password"
   - -dbUSER (database user) type: string default: "user"
   - -dspIP (IP address of the DSP) type: string default: "*"
-  - -rcvport ("Receive from" port) type: int32 default: 58505
-  - -sndport ("Send to" port) type: int32 default: 58501
-  - -test_duration (Test duration in seconds) type: int32 default: 60
+  - -rcvport ("Receive from" port) type: int default: 58505
+  - -sndport ("Send to" port) type: int default: 58501
+  - -test_duration (Test duration in seconds) type: int default: 60
 
 In order to run the program, you need to specify at least the database parameters:
 ```bash

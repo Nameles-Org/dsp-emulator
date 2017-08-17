@@ -36,7 +36,6 @@ using std::string;
 #define T_MSG   1 // microseconds
 #define ONEEXPNINE 1000000000 //1e9
 
-// TO-DO: define arguments for test running time and throughtput
 DEFINE_string(day, "161201", "Day of the database to use for the test queries (in format YYMMDD)");
 DEFINE_string(dspIP, "*", "IP address of the DSP");
 DEFINE_string(dbIP, "127.0.0.1", "IP address of the database (data processing module)");
@@ -48,7 +47,6 @@ DEFINE_int32(MPS, 30000, "Queries per second");
 DEFINE_int32(rcvport, 58505, "\"Receive from\" port");
 DEFINE_int32(sndport, 58501, "\"Send to\" port");
 
-//typedef uint32_t IPv4;
 typedef std::tuple<uint32_t,uint32_t,string> msg_tuple;
 typedef std::vector<msg_tuple> msgs_list;
 
@@ -90,7 +88,7 @@ int main (int argc, char *argv[]){
 	sleep(5);
 	kill(0, SIGINT);
 	receiverThread.join();
-  exit(0);
+  return 0;
 }
 
 void send_msgs(const string sendToSocket, const int n_msgs, const int MPS){
@@ -115,27 +113,34 @@ void send_msgs(const string sendToSocket, const int n_msgs, const int MPS){
 	uint32_t reqID = 1;
 	struct timespec t0, t1;
 	struct timespec ts0, ts1;
-	clock_gettime(CLOCK_MONOTONIC_RAW, &ts0);
 	timespec tspec_sleep = {0, 0};
 	int msg_time = 1e9/MPS; // In nanoseconds
+	int debug_print = 5;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
+
 	for (auto row: r) {
+		clock_gettime(CLOCK_MONOTONIC_RAW, &ts0);
 		zmqpp::message_t bid_req;
 		bid_req << reqID << row[0].as<string>() << row[1].as<string>();
 //		bid_req << reqID;
 //		bid_req << row[0].as<string>();
 //		bid_req << row[1].as<string>();
-		clock_gettime(CLOCK_MONOTONIC_RAW, &ts1);
-		int t_sleep = msg_time-time_diff(ts0,ts1);
-		// cout << t_sleep << endl;
-		if (t_sleep>0){
-			tspec_sleep.tv_nsec = t_sleep/3;
-			clock_nanosleep(CLOCK_MONOTONIC, 0, &tspec_sleep, NULL);
-		}
-		clock_gettime(CLOCK_MONOTONIC_RAW, &ts0);
 		sender.send(bid_req, true);
 		pending_requests[reqID] = ts0;
 		reqID++;
+		clock_gettime(CLOCK_MONOTONIC_RAW, &ts1);
+		long t_sleep = msg_time-time_diff(ts0,ts1);
+		// cout << t_sleep << endl;
+		if (t_sleep>0){
+			tspec_sleep.tv_nsec = t_sleep;
+			clock_nanosleep(CLOCK_MONOTONIC, 0, &tspec_sleep, NULL);
+		}
+		if (debug_print-->0){
+			cout << "msg_time=" << msg_time << endl;
+			cout << "time_diff=" << time_diff(ts0,ts1) << endl;
+			cout << "t_sleep=" << t_sleep << endl;
+			cout << endl;
+		}
 	}
 	sender.close();
 	context.terminate();
@@ -164,7 +169,7 @@ void receive_msgs(const string receiveFromSocket, const int n_msgs){
 
 	zmqpp::message_t reply;
 	uint32_t reqID;
-	string referrer,ip;
+	int score, category;
 	timespec t0, t1;
 	double latency;
 
@@ -173,8 +178,8 @@ void receive_msgs(const string receiveFromSocket, const int n_msgs){
 	while( ! boost::this_thread::interruption_requested() ){
 		if (receiver.receive(reply)){
 			reply.get(reqID, 0);
-			reply.get(referrer, 1);
-			reply.get(ip, 2);
+			reply.get(score, 1);
+			reply.get(category, 2);
 			t0 = pending_requests[reqID];
 			clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
 			latency = time_diff(t0, t1)/1e6;
