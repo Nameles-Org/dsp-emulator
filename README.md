@@ -1,5 +1,5 @@
 # dsp-emulator module
-This module emulates the function of the DSP end for testing nameles. Currently it implements a latency test.
+This module emulates the function of the DSP end for testing nameles. Currently it implements a latency test, but could be easily modified to perform other tests as well. 
 
 ## Running the latency test in docker-compose
 
