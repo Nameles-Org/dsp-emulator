@@ -2,15 +2,18 @@ version: "3"
 services:
   dsp-latency-test:
     image: apastor/nameles-dsp-emulator
+    expose:
+      - "58501"
+      - "58505"
     networks:
       - default
     restart: "no"
     environment:
       - SND_PORT=58501
       - RCV_PORT=58505
-      - DB_IP=<database_host>
-      - DB_USER=<username>
-      - DB_PWD=<password>
+      - DB_IP=nameles-streaming
+      - DB_USER=nameles
+      - DB_PWD=""
       - DB_NAME=nameles
       - DB_DAY=161201
       - MPS=30000
@@ -25,10 +28,28 @@ services:
       - SND_PORT=58505
       - RCV_PORT=58501
       - FWD_PORT=58510
-      - DB_IP=<database_host>
-      - DB_USER=<username>
-      - DB_PWD=<password>
+      - DB_IP=nameles-streaming
+      - DB_USER=nameles
+      - DB_PWD=""
       - DB_NAME=nameles
       - DB_DAY=161201
       - WORKERS=4
       - MIN_TOTAL=250
+  nameles-streaming:
+    image: apastor/nameles-streaming
+    expose:
+      - "5430"
+      - "58510"
+    networks:
+      - default
+    restart: "no"
+    environment:
+      - RCV_PORT=58510
+      - NOTIFY_SOCKETS=nameles-streaming:58520
+      - DB_IP=127.0.0.1
+      - DB_USER=nameles
+      - DB_PWD=""
+      - DB_NAME=nameles
+      - NWORKERS=2
+      - MAX_MSGS=1000000
+      - PYTHON_SCRIPT_NAME=/nameles-streaming/src/nameles-endofday.py
