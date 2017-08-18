@@ -105,7 +105,8 @@ void send_msgs(const string sendToSocket, const int n_msgs, const int MPS){
 		context.terminate();
 		return;
 	}
-	pqxx::connection c("dbname=" + FLAGS_dbNAME + " user="+ FLAGS_dbUSER + " host="+ FLAGS_dbIP + " password=" + FLAGS_dbPWD);
+	pqxx::connection c("dbname=" + FLAGS_dbNAME + " user="+ FLAGS_dbUSER +
+                     " host="+ FLAGS_dbIP + " port=5430 password=" + FLAGS_dbPWD);
 	pqxx::read_transaction txn(c);
 	pqxx::result r = txn.exec("SELECT referrer, host(ip) FROM tuples.ip_ref_" + FLAGS_day + " LIMIT " + std::to_string(n_msgs) );
 	txn.commit();
