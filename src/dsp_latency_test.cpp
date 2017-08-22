@@ -39,6 +39,7 @@ using std::string;
 DEFINE_string(day, "161201", "Day of the database to use for the test queries (in format YYMMDD)");
 DEFINE_string(dspIP, "*", "IP address of the DSP");
 DEFINE_string(dbIP, "127.0.0.1", "IP address of the database (data processing module)");
+DEFINE_int32(dbPORT, 5430, "Database port");
 DEFINE_string(dbPWD, "password", "password of the database");
 DEFINE_string(dbUSER, "user", "database user");
 DEFINE_string(dbNAME, "nameles", "database name");
@@ -106,7 +107,8 @@ void send_msgs(const string sendToSocket, const int n_msgs, const int MPS){
 		return;
 	}
 	pqxx::connection c("dbname=" + FLAGS_dbNAME + " user="+ FLAGS_dbUSER +
-                     " host="+ FLAGS_dbIP + " port=5430 password=" + FLAGS_dbPWD);
+                     " host="+ FLAGS_dbIP + " port=" + std::to_string(FLAGS_dbPORT) +
+										 " password=" + FLAGS_dbPWD);
 	pqxx::read_transaction txn(c);
 	pqxx::result r = txn.exec("SELECT referrer, host(ip) FROM tuples.ip_ref_" + FLAGS_day + " LIMIT " + std::to_string(n_msgs) );
 	txn.commit();
@@ -116,7 +118,7 @@ void send_msgs(const string sendToSocket, const int n_msgs, const int MPS){
 	struct timespec ts0, ts1;
 	timespec tspec_sleep = {0, 0};
 	int msg_time = 1e9/MPS; // In nanoseconds
-	int debug_print = 5;
+	// int debug_print = 0;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
 
 	for (auto row: r) {
@@ -136,12 +138,12 @@ void send_msgs(const string sendToSocket, const int n_msgs, const int MPS){
 			tspec_sleep.tv_nsec = t_sleep;
 			clock_nanosleep(CLOCK_MONOTONIC, 0, &tspec_sleep, NULL);
 		}
-		if (debug_print-->0){
-			cout << "msg_time=" << msg_time << endl;
-			cout << "time_diff=" << time_diff(ts0,ts1) << endl;
-			cout << "t_sleep=" << t_sleep << endl;
-			cout << endl;
-		}
+		// if (debug_print-->0){
+		// 	cout << "msg_time=" << msg_time << endl;
+		// 	cout << "time_diff=" << time_diff(ts0,ts1) << endl;
+		// 	cout << "t_sleep=" << t_sleep << endl;
+		// 	cout << endl;
+		// }
 	}
 	sender.close();
 	context.terminate();
