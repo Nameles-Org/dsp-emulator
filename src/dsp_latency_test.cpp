@@ -18,8 +18,11 @@
 #include <cstdlib>
 #include <cstdio>
 #include <csignal>
+#include <random>
 #include <unistd.h>
 #include <iostream>     // std::cout
+#include <fstream>
+#include <iterator>
 #include <vector>
 #include <tuple>        // std::tuple, std::get, std::tie, std::ignore
 #include <unordered_map>
@@ -38,6 +41,8 @@ using std::string;
 
 DEFINE_string(day, "161201", "Day of the database to use for the test queries (in format YYMMDD)");
 DEFINE_string(dspIP, "*", "IP address of the DSP");
+DEFINE_string(domainsFile, "", "filename of domains to use for the test");
+DEFINE_string(IPsFile, "", "filename of IPs to use for the test");
 DEFINE_string(dbIP, "127.0.0.1", "IP address of the database (data processing module)");
 DEFINE_int32(dbPORT, 5430, "Database port");
 DEFINE_string(dbPWD, "password", "password of the database");
@@ -62,7 +67,8 @@ void SIGINT_handler(int s){
            receiverThread.interrupt();
 }
 
-void send_msgs(const string sendToSocket, const int n_msgs, const int MPS);
+void send_msgs_from_db(const string sendToSocket, const int n_msgs, const int MPS);
+void send_msgs_random(const string sendToSocket, const int n_msgs, const int MPS);
 
 void receive_msgs(const string receiveFromSocket, const int n_msgs);
 
@@ -76,7 +82,12 @@ int main (int argc, char *argv[]){
 	string sendToSocket = "tcp://" + FLAGS_dspIP + ":" + std::to_string(FLAGS_sndport);
 	string receiveFromSocket = "tcp://" + FLAGS_dspIP + ":" + std::to_string(FLAGS_rcvport);
 
-	boost::thread senderThread(send_msgs, sendToSocket, n_msgs, FLAGS_MPS);
+	boost::thread senderThread;
+	if (FLAGS_domainsFile.empty() || FLAGS_IPsFile.empty() ){
+		senderThread = boost::thread(send_msgs_from_db, sendToSocket, n_msgs, FLAGS_MPS);
+	} else {
+		senderThread = boost::thread(send_msgs_random, sendToSocket, n_msgs, FLAGS_MPS);
+	}
 	//usleep(5000);
 	receiverThread = boost::thread(receive_msgs, receiveFromSocket, n_msgs);
 	struct sigaction sigIntHandler;
@@ -92,7 +103,72 @@ int main (int argc, char *argv[]){
   return 0;
 }
 
-void send_msgs(const string sendToSocket, const int n_msgs, const int MPS){
+
+void send_msgs_random(const string sendToSocket, const int n_msgs, const int MPS){
+	zmqpp::context_t context;
+	context.set(zmqpp::context_option::io_threads, 2);
+	zmqpp::socket_t  sender(context, zmqpp::socket_type::push);
+	sender.set(zmqpp::socket_option::linger, 1000); // 1 second
+	try {
+	sender.bind(sendToSocket);
+	cout << "sender thread socket: " << sendToSocket << endl;
+	} catch (zmqpp::zmq_internal_exception &e){
+		cout << "Exception: " << e.what() << endl;
+		sender.close();
+		context.terminate();
+		return;
+	}
+
+	std::ifstream domains_file{FLAGS_domainsFile};
+	std::ifstream ips_file{FLAGS_IPsFile};
+	using istritr = std::istream_iterator<std::string>;
+	std::vector<std::string> domains{istritr(domains_file), istritr()};
+	std::vector<std::string> ips{istritr(ips_file), istritr()};
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dist_domains(0, domains.size()-1);
+	std::uniform_int_distribution<> dist_ips(0, ips.size()-1);
+
+	cout << "Input data vectors created" << endl;
+	cout << "# of domains: " << domains.size() << endl;
+	cout << "# of IPs: " << ips.size() << endl;
+	int pending_msgs = n_msgs;
+	uint32_t reqID = 1;
+	struct timespec t0, t1;
+	struct timespec ts0, ts1;
+	timespec tspec_sleep = {0, 0};
+	int msg_time = 1e9/MPS; // In nanoseconds
+	// int debug_print = 0;
+	clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
+	while (pending_msgs--){
+		clock_gettime(CLOCK_MONOTONIC_RAW, &ts0);
+		zmqpp::message_t bid_req;
+		bid_req << reqID << domains[dist_domains(gen)] << ips[dist_ips(gen)];
+//		bid_req << reqID;
+//		bid_req << row[0].as<string>();
+//		bid_req << row[1].as<string>();
+		sender.send(bid_req, true);
+		pending_requests[reqID] = ts0;
+		reqID++;
+		clock_gettime(CLOCK_MONOTONIC_RAW, &ts1);
+		long t_sleep = msg_time-time_diff(ts0,ts1);
+		// cout << t_sleep << endl;
+		if (t_sleep>0){
+			tspec_sleep.tv_nsec = t_sleep;
+			clock_nanosleep(CLOCK_MONOTONIC, 0, &tspec_sleep, NULL);
+		}
+
+	}
+	sender.close();
+	context.terminate();
+
+	clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
+	cout << "Test duration: " << time_diff(t0, t1)/1e9 << endl;
+	cout << "# of messages sent: " << n_msgs << endl;
+}
+
+void send_msgs_from_db(const string sendToSocket, const int n_msgs, const int MPS){
 	zmqpp::context_t context;
 	context.set(zmqpp::context_option::io_threads, 2);
 	zmqpp::socket_t  sender(context, zmqpp::socket_type::push);

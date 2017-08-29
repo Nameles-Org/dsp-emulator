@@ -1,0 +1,30 @@
+version: "3"
+services:
+  dsp-latency-test:
+    image: apastor/nameles-dsp-emulator
+    expose:
+      - "58501"
+      - "58505"
+    networks:
+      nameles-net:
+        ipv4_address:  172.20.0.130
+    restart: "no"
+    environment:
+      - DELAY_START=0
+      - SND_PORT=58501
+      - RCV_PORT=58505
+      - DOMAINS_FILE=domain-list.txt
+      - IPS_FILE=ip-list.txt
+      - DB_IP=<database_host>
+      - DB_PORT=5430
+      - DB_USER=nameles
+      - DB_PWD=""
+      - DB_NAME=nameles
+      - DB_DAY=<day_of_input_data>
+      - MPS=10000
+      - TEST_TIME=10
+
+
+networks:
+  nameles-net:
+    external: true
