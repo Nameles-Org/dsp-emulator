@@ -41,8 +41,8 @@ using std::string;
 
 DEFINE_string(day, "161201", "Day of the database to use for the test queries (in format YYMMDD)");
 DEFINE_string(dspIP, "*", "IP address of the DSP");
-DEFINE_string(domainsFile, "", "filename of domains to use for the test");
-DEFINE_string(IPsFile, "", "filename of IPs to use for the test");
+DEFINE_string(domainsFile, "", "filename with list of domains for the test");
+DEFINE_string(IPsFile, "", "filename with list of IPs for the test");
 DEFINE_string(dbIP, "127.0.0.1", "IP address of the database (data processing module)");
 DEFINE_int32(dbPORT, 5430, "Database port");
 DEFINE_string(dbPWD, "password", "password of the database");
